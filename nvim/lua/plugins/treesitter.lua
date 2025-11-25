@@ -49,6 +49,8 @@ return {
                     "dockerfile",
                     "gitignore",
                     "astro",
+                    "rust",
+                    "zig"
                 },
                 -- auto install above language parsers
                 auto_install = true,

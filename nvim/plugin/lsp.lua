@@ -21,7 +21,7 @@ vim.diagnostic.config({
         },
     },
 })
--- put early in lsp.lua
+
 local orig = vim.lsp.util.open_floating_preview
 ---@diagnostic disable-next-line: duplicate-set-field
 function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
@@ -33,8 +33,6 @@ function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
     return orig(contents, syntax, opts, ...)
 end
 
--- 4) Per-buffer behavior on LSP attach (keymaps, auto-format, completion)
--- See :help LspAttach for the recommended pattern
 vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('my.lsp', {}),
     callback = function(args)
@@ -42,7 +40,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
         local buf    = args.buf
         local map    = function(mode, lhs, rhs) vim.keymap.set(mode, lhs, rhs, { buffer = buf }) end
 
-        -- Keymaps (use builtin LSP buffer functions)
         map('n', 'K', vim.lsp.buf.hover)
         map('n', 'gd', vim.lsp.buf.definition)
         map('n', 'gD', vim.lsp.buf.declaration)
@@ -55,10 +52,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         map({ 'n', 'x' }, '<F3>', function() vim.lsp.buf.format({ async = true }) end)
         map('n', '<F4>', vim.lsp.buf.code_action)
 
-        -- Put near your LSP on_attach
-        local excluded_filetypes = { php = true }
-
-        -- Auto-format on save (only if server can't do WillSaveWaitUntil)
+        local excluded_filetypes = { php = true, c = true, cpp = true }
         if not client:supports_method('textDocument/willSaveWaitUntil')
             and client:supports_method('textDocument/formatting')
             and not excluded_filetypes[vim.bo[buf].filetype]
@@ -74,26 +68,13 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end,
 })
 
--- 5) Define the Lua language server config (no mason/lspconfig)
--- See :help lsp-new-config and :help vim.lsp.config()
-
 
 local caps = vim.lsp.protocol.make_client_capabilities()
 
-local ok, blink = pcall(require, "blink.cmp")
+local ok, cmp_lsp = pcall(require, "cmp_nvim_lsp")
 if ok then
-  caps = vim.tbl_deep_extend("force", caps, blink.get_lsp_capabilities({}, false))
+    caps = cmp_lsp.default_capabilities(caps)
 end
-
-caps = vim.tbl_deep_extend("force", caps, {
-  textDocument = {
-    foldingRange = {
-      dynamicRegistration = false,
-      lineFoldingOnly = true,
-    },
-  },
-})
-
 vim.lsp.config['luals'] = {
     cmd = { 'lua-language-server' },
     filetypes = { 'lua' },
@@ -153,65 +134,98 @@ vim.lsp.config['ts_ls'] = {
     },
 }
 
--- Nix LSP (nixd)
-vim.lsp.config['nixd'] = {
-    cmd = { 'nixd' },
+vim.lsp.config['zls'] = {
+    cmd = { 'zls' },
+    filetypes = { 'zig', 'zir' },
+    root_markers = { 'zls.json', 'build.zig', '.git' },
+    capabilities = caps,
+    settings = {
+        zls = {
+            enable_build_on_save = true,
+            build_on_save_step = "install",
+            warn_style = false,
+            enable_snippets = true,
+        }
+    }
+}
+
+vim.lsp.config['nil_ls'] = {
+    cmd = { 'nil' },
     filetypes = { 'nix' },
     root_markers = { 'flake.nix', 'default.nix', '.git' },
     capabilities = caps,
     settings = {
-        ['nixd'] = {
+        ['nil'] = {
             formatting = {
-                command = { "nixfmt" }
+                command = { "alejandra" }
             }
         }
     }
 }
 
-
--- Python LSP (pyright)
-vim.lsp.config['pyright'] = {
-    cmd = { 'pyright-langserver', '--stdio' },
-    filetypes = { 'python' },
-    root_markers = { 'pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt', '.git' },
-    capabilities = caps,
-    settings = {
-        python = {
-            analysis = {
-                typeCheckingMode = "basic", -- "off", "basic", or "strict"
-                autoSearchPaths = true,
-                useLibraryCodeForTypes = true,
-                diagnosticMode = "workspace"
-            }
-        }
-    }
-}
-
--- Rust LSP (rust-analyzer)
 vim.lsp.config['rust_analyzer'] = {
     cmd = { 'rust-analyzer' },
     filetypes = { 'rust' },
-    root_markers = { 'Cargo.toml', '.git' },
+    root_markers = { 'Cargo.toml', 'rust-project.json', '.git' },
     capabilities = caps,
     settings = {
         ['rust-analyzer'] = {
             cargo = { allFeatures = true },
-            checkOnSave = {
-                command = "clippy"
+            formatting = {
+                command = { "rustfmt" }
             },
-            diagnostics = {
-                enable = true,
-                disabled = { "unresolved-proc-macro" },
-                enableExperimental = true,
-            }
-        }
-    }
+        },
+    },
 }
 
-vim.lsp.enable('pyright')
-vim.lsp.enable('rust_analyzer')
-vim.lsp.enable('luals')
-vim.lsp.enable('cssls')
-vim.lsp.enable('ts_ls')
-vim.lsp.enable('phpls')
-vim.lsp.enable('nixd')
+-- C / C++ via clangd
+vim.lsp.config['clangd'] = {
+    cmd = {
+        'clangd',
+        '--background-index',
+        '--clang-tidy',
+        '--header-insertion=never',
+        '--completion-style=detailed',
+        '--query-driver=/nix/store/*-gcc-*/bin/gcc*,/nix/store/*-clang-*/bin/clang*,/run/current-system/sw/bin/cc*',
+    },
+    filetypes = { 'c', 'cpp', 'objc', 'objcpp' },
+    root_markers = { 'compile_commands.json', '.clangd', 'configure.ac', 'Makefile', '.git' },
+    capabilities = caps,
+    init_options = {
+        fallbackFlags = { '-std=c23' }, -- Default to C23
+    },
+}
+
+vim.lsp.config['jsonls'] = {
+    cmd = { 'vscode-json-languageserver', '--stdio' },
+    filetypes = { 'json', 'jsonc' },
+    root_markers = { 'package.json', '.git', 'config.jsonc' },
+    capabilities = caps,
+}
+
+vim.lsp.config['hls'] = {
+    cmd = { 'haskell-language-server-wrapper', '--lsp' },
+    filetypes = { 'haskell', 'lhaskell' },
+    root_markers = { 'stack.yaml', 'cabal.project', 'package.yaml', '*.cabal', 'hie.yaml', '.git' },
+    capabilities = caps,
+    settings = {
+        haskell = {
+            formattingProvider = 'fourmolu',
+            plugin = {
+                semanticTokens = { globalOn = false }
+            },
+        },
+    },
+}
+
+vim.filetype.add({
+    extension = {
+        h = 'c',
+    },
+})
+
+for name, _ in pairs(vim.lsp.config) do
+    if name ~= '*' then  -- Skip the wildcard config
+        vim.lsp.enable(name)
+    end
+end
