@@ -71,10 +71,20 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
 local caps = vim.lsp.protocol.make_client_capabilities()
 
-local ok, cmp_lsp = pcall(require, "cmp_nvim_lsp")
+local ok, blink = pcall(require, "blink.cmp")
 if ok then
-    caps = cmp_lsp.default_capabilities(caps)
+  caps = vim.tbl_deep_extend("force", caps, blink.get_lsp_capabilities({}, false))
 end
+
+caps = vim.tbl_deep_extend("force", caps, {
+  textDocument = {
+    foldingRange = {
+      dynamicRegistration = false,
+      lineFoldingOnly = true,
+    },
+  },
+})
+
 vim.lsp.config['luals'] = {
     cmd = { 'lua-language-server' },
     filetypes = { 'lua' },
