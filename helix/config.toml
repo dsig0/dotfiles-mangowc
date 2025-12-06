@@ -11,6 +11,11 @@ completion-trigger-len = 1
 true-color = true
 color-modes = true
 end-of-line-diagnostics = "hint"
+clipboard-provider = "wayland"
+default-yank-register = "+"
+
+[editor.soft-wrap]
+enable = true
 
 [editor.cursor-shape]
 insert = "bar"
@@ -33,7 +38,7 @@ wrap-around = false
 left = ["mode", "read-only-indicator"]
 center = []
 right = ["diagnostics"]
-mode.normal = " "
+mode.normal = "N"
 mode.insert = "I"
 mode.select = "S"
 
