@@ -31,4 +31,3 @@ gtk-titlebar = true
 gtk-single-instance = true
 gtk-tabs-location = top
 gtk-wide-tabs = false
-
