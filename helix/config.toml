@@ -13,6 +13,7 @@ color-modes = true
 end-of-line-diagnostics = "hint"
 clipboard-provider = "wayland"
 default-yank-register = "+"
+line-number = "relative"
 
 [editor.soft-wrap]
 enable = true
@@ -28,7 +29,7 @@ min-width = 2
 
 [editor.indent-guides]
 render = true
-character = "¦"
+character = "|"
 skip-levels = 1
 
 [editor.search]
