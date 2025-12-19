@@ -2,7 +2,7 @@ use-grammars = { only = [
   "rust", "c", "cpp",
   "toml", "json", "yaml",
   "markdown", "html", "css",
-  "bash", "javascript","python"
+  "bash", "javascript","python","lua"
 ] }
 
 # ---------------------------
@@ -176,3 +176,8 @@ language-servers = ["rust-analyzer"]
 
 [language-server."rust-analyzer"]
 command = "rust-analyzer"
+
+[[language]]
+name = "lua"
+file-types = ["lua"]
+language-servers =["lua"]
