@@ -1,8 +1,7 @@
 # Font
 font-family =  JetBrainsMono Nerd Font
-font-size = 16
+font-size = 14
 
-bold-is-bright = false
 adjust-box-thickness = 1
 
 # Theme
