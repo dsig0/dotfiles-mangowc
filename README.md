@@ -10,19 +10,19 @@ yay -S rofi xdg-desktop-portal-wlr swaybg waybar wl-clip-persist cliphist wl-cli
 # Usage
 
 ```bash
-git clone https://github.com/dsig0/dotfiles-mangowc.git
+git clone https://github.com/dsig0/dotfiles.git
 ```
 ### Method 1
 
 1.Clone into the seperate folder and symlink the folders
 
 ```bash
-ln -s ~/dotfiles-mangowc/mango ~/.config
+ln -s ~/dotfiles/mango ~/.config
 ```
 ### Method 2
 
 1.Directly clone into the .config 
 
 ```bash
-git clone https://github.com/dsig0/dotfiles-mangowc.git ~/.config
+git clone https://github.com/dsig0/dotfiles.git ~/.config
 ```
